@@ -38,6 +38,21 @@ function App() {
     };
   }, []);
 
+  // function reset
+  const handleReset = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    setIsRunning(false);
+    setElapsedTime(0);
+    setLaps([]); //kosongkan daftar lap
+  }
+
+  // fungsi lap
+  const handleLap = () => {
+    setLaps((prevLaps) => [elapsedTime, ...prevLaps]);
+  };
+
   return (
     <main className="container">
       <h1>Chronix</h1>
@@ -48,11 +63,32 @@ function App() {
       </div>
 
       {/* Tombol kontrol */}
-      <div className="controls">{isRunning ? (
-        <button onClick={handlePause}>Pause</button>
-      ) : (
-        <button onClick={handleStart}>Start</button>
-      )}</div>
+      <div className="controls">
+        {/* tampilkan daftar lap */}
+        {laps.length > 0 && (
+          <div className="laps-container">
+            <h3>Lap Times</h3>
+            <ul className="laps-list">
+              {laps.map((lapTime, index) => (
+                <li key={index} className="lap-item">
+                  <span>Lap {laps.length - index}</span>
+                  <span>{formatTime(lapTime)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {isRunning ? (
+          <button onClick={handlePause}>Pause</button>
+        ) : (
+          <button onClick={handleStart}>Start</button>
+        )}
+
+        {isRunning ? (
+          <button onClick={handleLap}>Lap</button>
+        ) : (
+          elapsedTime > 0 && <button onClick={handleReset}>Reset</button>
+        )}</div>
     </main>
   )
 }
