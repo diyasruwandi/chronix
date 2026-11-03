@@ -1,51 +1,60 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { useState, useRef, useEffect } from "react";
 import "./App.css";
+import { formatTime } from "./utils/formatTime";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  //State yang memengaruhi tampilan UI
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [laps, setLaps] = useState<number[]>([]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+
+  //Ref untuk data di balik layar  (tidak memicu re-render)
+  const timerRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  const handleStart = () => {
+    setIsRunning(true);
+    startTimeRef.current = Date.now() - elapsedTime;
+
+    // fungsi untuk menjalankan stopwatch
+    // update setiap 10 milidetik
+    timerRef.current = window.setInterval(() => {
+      setElapsedTime(Date.now() - startTimeRef.current);
+    }, 10);
   }
+
+  // fungsi untuk menghentikan sementara
+  const handlePause = () => {
+    setIsRunning(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+    }
+  }
+  // mencegah memori leak
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+      <h1>Chronix</h1>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      {/* menampilkan waktu stopwatch */}
+      <div className="time-display">
+        <h2>{formatTime(elapsedTime)}</h2>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      {/* Tombol kontrol */}
+      <div className="controls">{isRunning ? (
+        <button onClick={handlePause}>Pause</button>
+      ) : (
+        <button onClick={handleStart}>Start</button>
+      )}</div>
     </main>
-  );
+  )
 }
 
 export default App;
